@@ -11,7 +11,10 @@ class Image extends Model
         'images',
         'book_id'
     ];
-
+    /**
+     *  
+     * @return BelongsTo<Book, Image>
+     */
     public function books(): BelongsTo {
         return $this->belongsTo(Book::class);
     }

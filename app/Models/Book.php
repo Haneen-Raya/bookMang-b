@@ -20,17 +20,26 @@ class Book extends Model
         'category_id',
         'cover'
     ];
-
+    /**
+     *
+     * @return BelongsTo<Author, Book>
+     */
     public function author() : BelongsTo
     {
         return $this->belongsTo(Author::class);
     }
-
+    /**
+     *
+     * @return BelongsToMany<Category, Book, \Illuminate\Database\Eloquent\Relations\Pivot>
+     */
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class , 'book_category','book_id','category_id');
     }
-
+    /**
+     *  
+     * @return HasMany<Image, Book>
+     */
     public function images(): HasMany{
         return $this->hasMany(Image::class);
     }

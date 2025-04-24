@@ -12,7 +12,10 @@ class Category extends Model
     protected $fillable = [
         'name'
     ];
-
+    /**
+     *  
+     * @return BelongsToMany<Book, Category, \Illuminate\Database\Eloquent\Relations\Pivot>
+     */
     public function books(): BelongsToMany
     {
         return $this->belongsToMany(Book::class, 'book_category', 'category_id', 'book_id');

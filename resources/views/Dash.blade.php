@@ -118,7 +118,7 @@
         </a>
         <ul id="booksMenu" style="display: none;">
             <li><a href="{{ route('books.index') }}"><i class="fas fa-eye"></i> View Books</a></li>
-            <li><a href="#"><i class="fas fa-trash"></i> Deleted Books</a></li>
+            <li><a href="{{ route('books.trashed') }}"><i class="fas fa-trash"></i> Deleted Books</a></li>
         </ul>
 
         <!-- المؤلفون -->
@@ -136,7 +136,7 @@
         </a>
         <ul id="categoriesMenu" style="display: none;">
             <li><a href="{{ route('categories.index') }}"><i class="fas fa-eye"></i> View Categories</a></li>
-            <li><a href="#"><i class="fas fa-trash"></i> Deleted Categories</a></li>
+            <li><a href="{{ route('categories.trashed') }}"><i class="fas fa-trash"></i> Deleted Categories</a></li>
         </ul>
 
         <!-- الطلبات -->

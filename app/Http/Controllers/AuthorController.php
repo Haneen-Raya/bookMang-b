@@ -9,7 +9,8 @@ use App\Http\Requests\AuthorRequest;
 class AuthorController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * View all authors
+     * @return \Illuminate\Contracts\View\View
      */
     public function index(){
         $authors = Author::paginate(5);
@@ -17,7 +18,8 @@ class AuthorController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Go to the creation page
+     * @return \Illuminate\Contracts\View\View
      */
     public function create()
     {
@@ -25,7 +27,9 @@ class AuthorController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store authors' information
+     * @param \App\Http\Requests\AuthorRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(AuthorRequest $request)
     {
@@ -40,7 +44,9 @@ class AuthorController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Show single author
+     * @param \App\Models\Author $author
+     * @return \Illuminate\Contracts\View\View
      */
     public function show(Author $author)
     {
@@ -48,15 +54,19 @@ class AuthorController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Go to the edit page
+     * @param \App\Models\Author $author
+     * @return \Illuminate\Contracts\View\View
      */
     public function edit(Author $author)
     {
         return view('Author.edit',compact('author'));
     }
-
     /**
-     * Update the specified resource in storage.
+     * Edit author information
+     * @param \App\Http\Requests\AuthorRequest $request
+     * @param \App\Models\Author $author
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(AuthorRequest $request,Author $author)
     {
@@ -69,7 +79,9 @@ class AuthorController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete author
+     * @param \App\Models\Author $author
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Author $author)
     {
@@ -78,12 +90,22 @@ class AuthorController extends Controller
         return redirect()->route('authors.index')->with('message','Deleted Successfully');
     }
 
+    /**
+     * Show deleted authors
+     * @return \Illuminate\Contracts\View\View
+     */
     public function trashed(){
         $authors = Author::onlyTrashed()->paginate(5);
 
         return view('Author.trashed',compact('authors'));
     }
 
+
+    /**
+     * Restore author
+     * @param mixed $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function restore ($id){
 
         $author = Author::withTrashed()->findOrFail($id) ;
@@ -92,8 +114,16 @@ class AuthorController extends Controller
         return redirect()->route('authors.index')->with('message','Recovered');
     }
 
+    /**
+     * Delete the author permanently
+     * @param mixed $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function forceDelete($id){
         $author = Author::onlyTrashed()->findOrFail($id);
+        if ($author->books()->withTrashed()->exists()) {
+            return redirect()->back()->with('error', 'Cannot permanently delete this author because they have associated books.');
+        }
         $author->forceDelete();
         return redirect()->route('authors.index')->with('message','Author Permanently Delete!');
 

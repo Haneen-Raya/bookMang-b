@@ -13,7 +13,10 @@ class Author extends Model
         'name',
         'email'
     ];
-
+    /**
+     * Summary of books
+     * @return HasMany<Book, Author>
+     */
     public function books( ): HasMany
     {
         return $this->hasMany(Book::class);

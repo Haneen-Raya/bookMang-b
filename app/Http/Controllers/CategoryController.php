@@ -9,7 +9,8 @@ use App\Http\Requests\CategoryRequest;
 class CategoryController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  Display a listing of the categories.
+     * @return \Illuminate\Contracts\View\View
      */
     public function index()
     {
@@ -18,7 +19,8 @@ class CategoryController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     *  Show the form for creating a new category.
+     * @return \Illuminate\Contracts\View\View
      */
     public function create()
     {
@@ -26,7 +28,9 @@ class CategoryController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     *   Store a newly created category in storage.
+     * @param \App\Http\Requests\CategoryRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(CategoryRequest $request)
     {
@@ -39,7 +43,9 @@ class CategoryController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  Display the specified category.
+     * @param \App\Models\Category $category
+     * @return \Illuminate\Contracts\View\View
      */
     public function show(category $category)
     {
@@ -47,7 +53,9 @@ class CategoryController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *  Show the form for editing the specified category.
+     * @param \App\Models\Category $category
+     * @return \Illuminate\Contracts\View\View
      */
     public function edit(category $category)
     {
@@ -55,7 +63,10 @@ class CategoryController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *  Update the specified category in storage.
+     * @param \App\Http\Requests\CategoryRequest $request
+     * @param \App\Models\Category $category
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(CategoryRequest $request, Category $category)
     {
@@ -68,7 +79,9 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove (soft delete) the specified category from storage.Summary of destroy
+     * @param \App\Models\Category $category
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(category $category)
     {
@@ -76,5 +89,35 @@ class CategoryController extends Controller
 
         return redirect()->route('categories.index')->with('message','Deleted Successfully');
 
+    }
+    /**
+     *  Display a listing of the soft-deleted categories (trashed).
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function trashed(){
+      $categories = Category::onlyTrashed()->paginate('5');
+      return view('Category.trashed',compact('categories'));
+
+    }
+    /**
+     *  estore the specified soft-deleted category.
+     * @param mixed $id
+     * @return mixed|\Illuminate\Http\RedirectResponse
+     */
+    public function restore($id){
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->restore();
+
+        return redirect()->route('categories.index');
+    }
+    /**
+     *  Permanently delete the specified soft-deleted category.
+     * @param mixed $id
+     * @return mixed|\Illuminate\Http\RedirectResponse
+     */
+    public function forceDelete($id){
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->forceDelete();
+        return redirect()->route('categories.trashed');
     }
 }

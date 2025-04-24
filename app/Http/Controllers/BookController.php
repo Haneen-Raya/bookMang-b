@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\File;
 class BookController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * * Display a listing of the books.
+     * @return \Illuminate\Contracts\View\View
      */
     public function index()
     {
@@ -25,7 +26,9 @@ class BookController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     *
+     * * Show the form for creating a new book.
+     * @return \Illuminate\Contracts\View\View
      */
     public function create()
     {
@@ -36,35 +39,36 @@ class BookController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     *
+     *Store a newly created book in storage.
+     * @param \App\Http\Requests\BookRequest $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(BookRequest $request)
 {
-    // البيانات التي تم التحقق منها
+
     $validated = $request->validated();
 
-    // رفع الغلاف (cover)
+
     if ($request->hasFile('cover')) {
         $file = $request->file('cover');
-        $path = $file->store('covers', 'public'); // تخزين في نظام التخزين العام
-        $validated['cover'] = $path; // إضافة المسار إلى البيانات
+        $path = $file->store('covers', 'public');
+        $validated['cover'] = $path;
     }
 
-    // إنشاء الكتاب
     $book = Book::create([
         'title'     => $validated['title'],
         'body'      => $validated['body'],
-        'cover'     => $validated['cover'] ?? null, // إضافة الغلاف إذا تم رفعه
+        'cover'     => $validated['cover'] ?? null,
         'author_id' => $validated['author_id'],
     ]);
 
-    // رفع الصور الإضافية (images)
+
     if ($request->hasFile('images')) {
         foreach ($request->file('images') as $file) {
             $imageName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('images', $imageName, 'public'); // تخزين الصور في نظام التخزين العام
+            $file->storeAs('images', $imageName, 'public');
 
-            // تخزين الصورة في جدول images
             Image::create([
                 'book_id' => $book->id,
                 'images'  => $imageName,
@@ -72,20 +76,21 @@ class BookController extends Controller
         }
     }
 
-    // ربط الكتاب بالأصناف (categories)
     if (isset($validated['categories']) && !empty($validated['categories'])) {
-        $book->categories()->sync($validated['categories']); // ربط الكتاب بالأصناف
-    } else {
-        $book->categories()->detach(); // فصل أي أصناف إذا لم يتم تحديدها
+        $book->categories()->sync($validated['categories']);
+        $book->categories()->detach();
     }
-    // إعادة التوجيه مع رسالة النجاح
+
     return redirect()->route('books.index')->with('success', 'تم إنشاء الكتاب بنجاح!');
 }
 
 
 
     /**
-     * Display the specified resource.
+     *
+     * Display the specified book.
+     * @param \App\Models\Book $book
+     * @return \Illuminate\Contracts\View\View
      */
     public function show(Book $book)
     {
@@ -95,19 +100,25 @@ class BookController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *
+     ** Show the form for editing the specified book.
+     * @param \App\Models\Book $book
+     * @return \Illuminate\Contracts\View\View
      */
     public function edit(Book $book)
     {
-        $book->load(['categories', 'images', 'author']); // تحميل العلاقات
-        $authors = Author::all(); // جلب جميع المؤلفين
-        $categories = Category::all(); // جلب جميع الأصناف
-        return view('Book.edit', compact('book', 'authors', 'categories')); // تمرير البيانات إلى الـ view
-
+        $book->load(['categories', 'images', 'author']);
+        $authors = Author::all();
+        $categories = Category::all();
+        return view('Book.edit', compact('book', 'authors', 'categories'));
     }
 
     /**
-     * Update the specified resource in storage.
+     *
+     *Update the specified book in storage.
+     * @param \App\Http\Requests\BookRequest $request
+     * @param \App\Models\Book $book
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(BookRequest $request, Book $book)
 {
@@ -149,7 +160,10 @@ class BookController extends Controller
 }
 
     /**
-     * Remove the specified resource from storage.
+     *
+     *Remove (soft delete) the specified book from storage.
+     * @param \App\Models\Book $book
+     * @return mixed|\Illuminate\Http\RedirectResponse
      */
     public function destroy(Book $book)
     {
@@ -165,7 +179,12 @@ class BookController extends Controller
     return redirect()->route('books.index');
 }
 
-// To delete all Images
+/**
+ *
+ *Delete all additional images associated with a specific book.
+ * @param mixed $id
+ * @return \Illuminate\Http\RedirectResponse
+ */
 public function deleteImages($id)
 {
 
@@ -183,7 +202,13 @@ public function deleteImages($id)
     return redirect()->route('books.edit', $id)->with('success', 'Images deleted successfully!');
 }
 
-
+/**
+ *
+ * Delete a specific additional image associated with a book.
+ * @param mixed $id
+ * @param mixed $image_id
+ * @return \Illuminate\Http\RedirectResponse
+ */
 public function deleteImage($id, $image_id)
 {
 
@@ -198,4 +223,49 @@ public function deleteImage($id, $image_id)
     return redirect()->route('books.edit', $id)->with('success', 'Image deleted successfully!');
 }
 
+/**
+ *
+ *Display a listing of the soft-deleted books (trashed).
+ * @return \Illuminate\Contracts\View\View
+ */
+public function trashed()
+    {
+
+        $books = Book::onlyTrashed()->with('author')->latest('deleted_at')->paginate(10);
+
+        return view('Book.trashed', compact('books'));
+    }
+
+    /**
+     *
+     *Restore the specified soft-deleted book.
+     * @param mixed $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function restore($id)
+    {
+
+        $book = Book::onlyTrashed()->findOrFail($id);
+        $book->restore();
+
+        return redirect()->route('books.trashed')
+                         ->with('message', 'Book restored successfully.');
+    }
+
+    /**
+     *
+     * * Permanently delete the specified soft-deleted book.
+     * @param mixed $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function forceDelete($id)
+    {
+
+        $book = Book::onlyTrashed()->findOrFail($id);
+
+        $book->forceDelete();
+        return redirect()->route('books.trashed')
+                         ->with('message', 'Book permanently deleted successfully.');
+    }
 }
+
